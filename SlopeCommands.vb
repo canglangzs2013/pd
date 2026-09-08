@@ -16,7 +16,7 @@ Public Class SlopeCommands
     ''' 命令：DrawSlope
     ''' 功能：根据输入的坡率（如1:2.5），绘制一条二维斜线。
     ''' </summary>
-    <CommandMethod("Slope")>
+    <CommandMethod("pdd")>
     Public Sub DrawSlopeLine()
         ' 获取当前文档、数据库和编辑器
         Dim doc As Document = Application.DocumentManager.MdiActiveDocument
@@ -25,25 +25,27 @@ Public Class SlopeCommands
 
         ' 1. 获取用户输入的坡率 (例如输入 2.5 代表 1:2.5)
         Dim slopeRatio As Double = 0.0
-        Dim pso As New PromptDoubleOptions(vbLf & "请输入坡率水平比例 (如 1:2 请输入 2): ")
+        Dim pso As New PromptDoubleOptions(vbLf & "请输入边坡坡率 (如 1:2 请输入 2): ")
         pso.AllowNone = True ' 允许用户直接回车
         Dim pdr As PromptDoubleResult = ed.GetDouble(pso)
 
         If pdr.Status = PromptStatus.OK Then
             slopeRatio = pdr.Value
+            ed.WriteMessage(vbLf & "已输入边坡坡率为1：" & slopeRatio)
         ElseIf pdr.Status = PromptStatus.None Then
-            slopeRatio = 2 ' 默认值
+            slopeRatio = 1.5 ' 默认值
+            ed.WriteMessage(vbLf & "未输入有效边坡坡率，按默认值1:1.5绘图")
         Else
             Return ' 用户取消
         End If
 
         If slopeRatio = 0 Then
-            ed.WriteMessage(vbLf & "坡率不能为0。")
+            ed.WriteMessage(vbLf & "边坡坡率不能为0。")
             Return
         End If
 
         ' 2. 获取起点
-        Dim pprStart As PromptPointResult = ed.GetPoint(vbLf & "请指定起点: ")
+        Dim pprStart As PromptPointResult = ed.GetPoint(vbLf & "请指定线起点: ")
         If pprStart.Status <> PromptStatus.OK Then Return
         Dim ptStart As Point3d = pprStart.Value
 
