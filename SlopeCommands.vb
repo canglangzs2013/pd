@@ -137,5 +137,63 @@ Public Class SlopeCommands
             ed.WriteMessage(vbLf & "坡线绘制完成！")
         End Using
     End Sub
+    ''' <summary>
+    ''' 命令：pdd
+    ''' 功能：拾取2个点，计算连线的角度与边坡坡比1:N，输出到状态栏
+    ''' </summary>
+    ''' <summary>
+    ''' 命令：pdd
+    ''' 功能：拾取2个点，计算连线的角度与边坡坡比1:N，输出到状态栏+命令行
+    ''' </summary>
+    <CommandMethod("gpd")>
+    Public Sub getSlope()
+        Dim doc As Document = Application.DocumentManager.MdiActiveDocument
+        Dim db As Database = doc.Database
+        Dim ed As Editor = doc.Editor
+
+        '拾取第1点
+        Dim pprStart As PromptPointResult = ed.GetPoint(vbLf & "请选择第一个点：")
+        If pprStart.Status <> PromptStatus.OK Then Return
+        Dim pt1 As Point3d = pprStart.Value
+
+        '拾取第2点，橡皮筋预览
+        Dim opt2 As New PromptPointOptions(vbLf & "请选择第二个点：")
+        opt2.BasePoint = pt1
+        opt2.UseBasePoint = True
+        Dim pprEnd As PromptPointResult = ed.GetPoint(opt2)
+        If pprEnd.Status <> PromptStatus.OK Then Return
+        Dim pt2 As Point3d = pprEnd.Value
+
+        '投影XY平面二维计算，忽略Z
+        Dim p1_2d As New Point2d(pt1.X, pt1.Y)
+        Dim p2_2d As New Point2d(pt2.X, pt2.Y)
+
+        Dim dx As Double = p2_2d.X - p1_2d.X
+        Dim dy As Double = p2_2d.Y - p1_2d.Y
+
+        Dim horizDist As Double = Math.Sqrt(dx ^ 2 + dy ^ 2) '水平投影长度
+        Dim deltaY As Double = Math.Abs(dy) '竖向高差绝对值
+
+        Dim statusMsg As String
+
+        If Math.Abs(horizDist) < 0.00000001 Then
+            '竖直线
+            statusMsg = "【竖直】角度：90.00°，坡比：--（无水平分量）"
+        ElseIf Math.Abs(deltaY) < 0.00000001 Then
+            '水平线
+            statusMsg = "【水平】角度：0.00°，坡比：--（无高差）"
+        Else
+            Dim angleRad As Double = Math.Atan2(Math.Abs(dy), horizDist)
+            Dim angleDeg As Double = angleRad * 180.0 / Math.PI
+            Dim slopeM As Double = horizDist / deltaY '坡比1:M中的M
+
+            statusMsg = String.Format("角度:{0:F2}°   边坡坡比 1 : {1:F3}", angleDeg, slopeM)
+        End If
+
+        ' ==========中望CAD设置状态栏文字==========
+        'Application.ShowStatusBarText(statusMsg)
+        '命令行同时输出
+        ed.WriteMessage(vbLf & statusMsg)
+    End Sub
 
 End Class
